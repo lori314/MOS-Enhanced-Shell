@@ -1,7 +1,7 @@
 #include <lib.h>
 #include <fs.h>
-#include <shell.h> // Our new header
-#include <string.h> // FIX: Include for memmove, strcpy, etc.
+#include <shell.h>
+#include <string.h>
 
 // History buffer: MAX_HISTORY for stored commands, +1 for the current line
 static char history_buf[MAX_HISTORY + 1][MAX_CMD_LEN];
@@ -137,11 +137,9 @@ int readline_advanced(char *buf, int size) {
                 if (c == 'A') { // Up arrow
                     if (history_nav_pos < history_count - 1) {
                         if (history_nav_pos == -1) {
-                            // --- MODIFICATION START ---
-                            // Save current line to the DEDICATED temporary slot.
+                                                        // Save the current unfinished line in the temporary history slot.
                             strcpy(history_buf[MAX_HISTORY], local_buf);
-                            // --- MODIFICATION END ---
-                        }
+                                                    }
                         history_nav_pos++;
                         int idx = (history_tail - 1 - history_nav_pos + MAX_HISTORY) % MAX_HISTORY;
                         strcpy(local_buf, history_buf[idx]);
@@ -151,11 +149,9 @@ int readline_advanced(char *buf, int size) {
                 } else if (c == 'B') { // Down arrow
                     if (history_nav_pos > -1) {
                         history_nav_pos--;
-                        // --- MODIFICATION START ---
-                        // If navigating back to the new line, retrieve it from the DEDICATED slot.
+                                                // When returning to the newest entry, restore the unfinished line.
                         char *src = (history_nav_pos == -1) ? history_buf[MAX_HISTORY] : history_buf[(history_tail - 1 - history_nav_pos + MAX_HISTORY) % MAX_HISTORY];
-                        // --- MODIFICATION END ---
-                        strcpy(local_buf, src);
+                                                strcpy(local_buf, src);
                         len = cursor_pos = strlen(local_buf);
                         redraw_line(prompt, local_buf, len, cursor_pos);
                     }

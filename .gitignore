@@ -17,3 +17,10 @@ __pycache__
 *.pyc
 *.pyo
 .qemu_log
+
+# Editor swap files
+*.swo
+*.swn
+
+# Local build artifact
+helloworld

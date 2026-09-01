@@ -3,9 +3,9 @@
 #include <fs.h>
 #include <env.h>
 #include "shell.h"
-#include <string.h> // For standard string functions like strchr, strcpy, etc.
+#include <string.h>
 
-#define O_APPEND 0x1000 // Placeholder, handled manually
+#define O_APPEND 0x1000
 
 #define WHITESPACE " \t\r\n"
 #define SYMBOLS "<|>&;()"

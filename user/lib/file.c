@@ -33,7 +33,7 @@ int open(const char *path, int mode) {
 		return -E_BAD_PATH;
 	}
 
-	// --- FINAL SOLUTION: Manually implement O_APPEND functionality ---
+	// Emulate O_APPEND in the user library.
 	int append = mode & O_APPEND;
 	if (append) {
 		// Remove O_APPEND from the mode to avoid the underlying -E_INVAL error.
@@ -67,7 +67,7 @@ int open(const char *path, int mode) {
 
 	int fdnum = fd2num(fd);
 
-	// --- FINAL SOLUTION (Part 2) ---
+	// Move the descriptor to the end after opening in append mode.
 	if (append) {
 		// After a successful open, seek to the end of the file.
 		// The 'seek' function updates the file descriptor's internal offset.

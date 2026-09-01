@@ -63,10 +63,9 @@ void __attribute__((noreturn)) sys_yield(void) {
 	schedule(1);
 }
 
-// --- MODIFICATION START ---
 /*
- * New system call for destroying an environment. This function now handles
- * both self-destruction (becoming a zombie) and reaping by a parent.
+ * Destroy an environment. Self-destruction records a zombie exit status;
+ * a parent can later reap the zombie.
  *
  * @param envid The ID of the environment to affect. If 0, affects the current env.
  * @param status The exit status, only used when an env destroys itself.
@@ -108,7 +107,6 @@ int sys_env_destroy(u_int envid, int status) {
 	
 	return 0;
 }
-// --- MODIFICATION END ---
 
 /* Overview:
  *   Register the entry of user space TLB Mod handler of 'envid'.

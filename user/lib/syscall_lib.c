@@ -20,13 +20,10 @@ void syscall_yield(void) {
 	msyscall(SYS_yield);
 }
 
-// --- MODIFICATION START ---
-// The definition is updated to match the declaration in lib.h.
-// It now accepts a status and passes it to the kernel via msyscall.
+// Destroy an environment while carrying its exit status to the kernel.
 int syscall_env_destroy(u_int envid, int status) {
 	return msyscall(SYS_env_destroy, envid, status);
 }
-// --- MODIFICATION END ---
 
 int syscall_set_tlb_mod_entry(u_int envid, void (*func)(struct Trapframe *)) {
 	return msyscall(SYS_set_tlb_mod_entry, envid, func);

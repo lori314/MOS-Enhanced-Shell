@@ -16,11 +16,9 @@
 #define envs ((const volatile struct Env *)UENVS)
 #define pages ((const volatile struct Page *)UPAGES)
 
-// --- MODIFICATION START ---
 // libos
-// The exit function now takes an integer status code.
+// User processes return an explicit exit status.
 void exit(int status) __attribute__((noreturn));
-// --- MODIFICATION END ---
 
 extern const volatile struct Env *env;
 
@@ -57,10 +55,8 @@ int syscall_print_cons(const void *str, u_int num);
 u_int syscall_getenvid(void);
 void syscall_yield(void);
 
-// --- MODIFICATION START ---
-// syscall_env_destroy now takes an exit status.
+// Environment destruction carries an exit status.
 int syscall_env_destroy(u_int envid, int status);
-// --- MODIFICATION END ---
 
 int syscall_set_tlb_mod_entry(u_int envid, void (*func)(struct Trapframe *));
 int syscall_mem_alloc(u_int envid, void *va, u_int perm);
@@ -94,11 +90,9 @@ int syscall_get_var_by_index(u_int index, struct Var *buf);
 void ipc_send(u_int whom, u_int val, const void *srcva, u_int perm);
 u_int ipc_recv(u_int *whom, void *dstva, u_int *perm);
 
-// --- MODIFICATION START ---
 // wait.c
 // The wait function now returns the child's exit status.
 int wait(u_int envid);
-// --- MODIFICATION END ---
 
 // console.c
 int opencons(void);
@@ -152,9 +146,7 @@ int runcmd(char *s);
 			user_panic("assertion failed: %s", #x);                                    \
 	} while (0)
 
-// --- MODIFICATION START ---
 // All "O_" file open mode definitions have been moved to user/include/fd.h
 // to ensure they are available to both user programs and the file server.
-// --- MODIFICATION END ---
 
 #endif

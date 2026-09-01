@@ -3,9 +3,9 @@
 #include <fs.h>
 #include <env.h>
 #include "shell.h"
-#include <string.h> // For standard string functions like strchr, strcpy, etc.
+#include <string.h>
 
-#define O_APPEND 0x1000 // Placeholder, handled manually
+#define O_APPEND 0x1000
 
 #define WHITESPACE " \t\r\n"
 #define SYMBOLS "<|>&;()"
@@ -608,8 +608,7 @@ int main(int argc, char **argv) {
 				break;
 		}
 
-		// --- MODIFICATION START ---
-		// Correct order for history handling
+				// Normalize input before recording it in history
 
 		// 1. Strip comments
 		char *comment = (char *)strchr(buf, '#');
@@ -628,8 +627,7 @@ int main(int argc, char **argv) {
 		if (interactive && buf[0] != '\0') {
 			history_add(buf);
 		}
-		// --- MODIFICATION END ---
-
+		
 
 		// Variable expansion
 		char *p = buf;

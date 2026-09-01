@@ -1,7 +1,6 @@
 #include <fs.h>
 #include <lib.h>
-#include <path.h> // MODIFICATION: Include our new header
-
+#include <path.h> 
 #define debug 0
 
 static int file_close(struct Fd *fd);
@@ -34,15 +33,14 @@ int open(const char *path, int mode) {
 		return -E_BAD_PATH;
 	}
 
-	// --- FINAL SOLUTION: Manually implement O_APPEND functionality ---
+	// Emulate O_APPEND in the user library.
 	int append = mode & O_APPEND;
 	if (append) {
 		// Remove O_APPEND from the mode to avoid the underlying -E_INVAL error.
 		// We will handle the "append" logic manually by seeking to the end of the file.
 		mode &= ~O_APPEND;
 	}
-	// --- END OF MODIFICATION ---
-
+	
 	// Step 1: Alloc a new 'Fd' using 'fd_alloc' in fd.c.
 	struct Fd *fd;
 	if ((r = fd_alloc(&fd)) < 0) {
@@ -69,14 +67,13 @@ int open(const char *path, int mode) {
 
 	int fdnum = fd2num(fd);
 
-	// --- FINAL SOLUTION (Part 2) ---
+	// Move the descriptor to the end after opening in append mode.
 	if (append) {
 		// After a successful open, seek to the end of the file.
 		// The 'seek' function updates the file descriptor's internal offset.
 		seek(fdnum, size);
 	}
-	// --- END OF MODIFICATION ---
-
+	
 	// Step 5: Return the number of file descriptor.
 	return fdnum;
 }

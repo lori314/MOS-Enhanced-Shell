@@ -70,7 +70,7 @@ struct Env {
 	int env_exit_status; // Stores the exit status of the environment for the parent to retrieve.
 
 	// Lab 6 Shell Challenge: Environment and local variables
-	// FIX: This is now a pointer. Memory will be allocated in env_alloc.
+	// Variable table is allocated per environment in env_alloc.
 	struct Var *env_vars;
 };
 

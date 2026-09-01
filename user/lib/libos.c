@@ -4,8 +4,7 @@
 #include <syscall.h>
 
 /*
- * The new exit() function for user processes.
- * It now takes an integer status code.
+ * Exit a user process with an integer status code.
  */
 void exit(int status) {
 	// After fs is ready (lab5), all our open files should be closed before dying.

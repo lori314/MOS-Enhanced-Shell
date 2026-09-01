@@ -2,9 +2,9 @@
 
 这是北航操作系统课程中基于 MOS（MIPS Operating System）完成的 Shell 扩展任务。
 
-项目不是单独重写一个 Shell，而是在课程提供的 MOS 基线上，同时修改内核、系统调用、用户库和 `sh`，补充当前工作目录、环境变量、退出状态、命令链、命令替换和交互式行编辑等功能。
+项目不是从零实现一个操作系统，也不是单独重写一个 Shell，而是在课程提供的 MOS 基线上同时修改内核、系统调用、用户库和 `sh`，让 Shell 支持当前工作目录、变量、退出状态、命令链、命令替换和交互式行编辑。
 
-## 分层结构
+## 修改范围
 
 ```text
 user/sh.c
@@ -15,14 +15,29 @@ system-call wrappers
    ↓
 kernel syscalls
    ↓
-MOS kernel state
+MOS process state
 ```
 
-一些表面上属于 Shell 的功能需要跨层实现。例如 `cd` 不只是修改 `sh` 中的字符串，而是需要让进程保存 CWD，并让文件访问路径统一解析。
+一些看起来属于 Shell 的功能实际上需要跨层修改。例如 `cd` 不只是改变一个字符串，还需要让进程保存 CWD，并让用户态文件访问统一解析相对路径。
+
+主要扩展集中在：
+
+```text
+include/env.h
+include/syscall.h
+kern/env.c
+kern/syscall_all.c
+
+user/lib/path.c
+user/lib/file.c
+user/lib/wait.c
+user/lib/shellio.c
+user/sh.c
+```
 
 ## 1. Current Working Directory
 
-`struct Env` 中增加了：
+`struct Env` 中增加：
 
 ```c
 char env_cwd[MAXPATHLEN];
@@ -33,16 +48,16 @@ char env_cwd[MAXPATHLEN];
 - `SYS_getcwd`
 - `SYS_chdir`
 
-用户态的 `resolve_path()` 会将相对路径与当前 CWD 合并，并处理：
+用户态的 `resolve_path()` 将相对路径与当前 CWD 合并，并处理：
 
 - `.`
 - `..`
 - 绝对路径
 - 多级相对路径
 
-文件层的 `open()` 也会先调用路径解析，因此 `cat`、`ls`、`rm` 等使用普通文件接口的程序可以直接使用相对路径。
+文件层的 `open()` 也会经过路径解析，因此 `cat`、`ls`、`rm` 等使用普通文件接口的程序可以直接使用相对路径。
 
-Shell 中实现了：
+Shell 中增加：
 
 ```text
 cd
@@ -51,7 +66,7 @@ pwd
 
 ## 2. Shell Variables
 
-每个 `Env` 可以保存一组变量：
+每个 `Env` 保存一组变量：
 
 ```text
 name
@@ -64,7 +79,7 @@ flags
 - `VAR_EXPORT`
 - `VAR_READONLY`
 
-对应系统调用包括：
+对应系统调用：
 
 - `SYS_set_var`
 - `SYS_get_var`
@@ -79,7 +94,7 @@ unset
 $VAR expansion
 ```
 
-子进程创建过程中还包含对可导出变量的继承处理。
+创建子进程时，可导出的变量会随 CWD 一起继承。
 
 ## 3. Exit Status and Conditional Execution
 
@@ -91,7 +106,7 @@ cmd1 || cmd2
 cmd1 ; cmd2
 ```
 
-项目扩展了进程退出与等待机制。
+项目扩展了进程退出和等待机制。
 
 `Env` 中增加：
 
@@ -111,34 +126,39 @@ int env_exit_status;
 echo `command`
 ```
 
-`run_and_capture_output()` 的处理方式是：
+`run_and_capture_output()` 的执行过程是：
 
-1. 创建 pipe；
-2. fork 子进程；
-3. 将子进程 stdout 重定向到 pipe；
-4. 执行反引号内部命令；
-5. 父进程读取输出；
-6. 将结果替换回原命令字符串。
+```text
+pipe
+ ↓
+fork
+ ↓
+child stdout -> pipe
+ ↓
+execute command
+ ↓
+parent reads output
+ ↓
+replace backtick expression
+```
 
-因此这里同时使用了进程创建、管道、文件描述符复制和 wait/exit status。
+这部分同时使用了进程创建、管道、文件描述符复制和 wait / exit status。
 
 ## 5. Redirection
 
-Shell 原有重定向基础上增加了：
+在原有重定向基础上增加：
 
 ```text
 >>
 ```
 
-当前实现会在打开文件后将文件偏移移动到末尾，再继续写入。
+Append 模式通过打开文件后移动文件偏移到末尾实现。
 
-`user/lib/file.c` 中也对 `O_APPEND` 做了兼容处理：底层文件系统不直接接受该 flag 时，由用户库去掉 flag 并在打开后执行 `seek(fd, size)`。
+`user/lib/file.c` 也对 `O_APPEND` 做了兼容处理：当底层文件系统接口不直接接受该 flag 时，用户库去掉 flag，并在打开后执行 `seek(fd, size)`。
 
 ## 6. Interactive Line Editing
 
-`user/lib/shellio.c` 实现了交互式输入编辑。
-
-支持：
+`user/lib/shellio.c` 实现交互式命令行编辑，支持：
 
 - Up / Down：历史命令
 - Left / Right：移动光标
@@ -155,54 +175,44 @@ Shell 原有重定向基础上增加了：
 /.mos_history
 ```
 
-实现使用 ANSI escape sequence 重绘当前命令行。
+命令行通过 ANSI escape sequence 重绘，并使用环形缓冲区维护历史记录。
 
-## 主要修改位置
+## Build and Run
 
-```text
-include/env.h
-    Env CWD / exit status / variable state
-
-include/syscall.h
-    new syscall numbers
-
-kern/env.c
-    process creation and state inheritance
-
-kern/syscall_all.c
-    cwd / variable / process-state syscalls
-
-user/lib/path.c
-    relative-path resolution
-
-user/lib/file.c
-    path-aware open and append handling
-
-user/lib/wait.c
-    exit-status collection and zombie reaping
-
-user/lib/shellio.c
-    history and line editing
-
-user/sh.c
-    built-ins, expansion, command chain and substitution
-```
-
-## 核心扩展
+仓库沿用 MOS 课程工程的构建方式。根据 `include.mk`，默认使用：
 
 ```text
-CWD + relative paths
-environment/local variables
-export / readonly flags
-cd / pwd / declare / unset
-persistent command history
-cursor-aware readline
-; / && / ||
-backtick command substitution
->> append redirection
-exit-status propagation
+mips-linux-gnu-gcc / ld
+qemu-system-mipsel
+make
 ```
+
+构建：
+
+```bash
+make
+```
+
+生成的内核和文件系统镜像位于 `target/`。
+
+运行：
+
+```bash
+make run
+```
+
+Makefile 默认使用 QEMU Malta / MIPS 4Kc 环境启动 MOS。仓库中的 `.mos-this-lab` 当前设置为 Lab 6。
+
+课程测试框架也保留在 `tests/`，Makefile 提供：
+
+```bash
+make test
+```
+
+具体能否直接运行取决于本机是否配置了课程要求的 MIPS 交叉编译工具链和 QEMU。
 
 ## 说明
 
-仓库包含完整 MOS 课程代码，其中大量基础内核、文件系统和用户库来自课程框架；本 README 重点描述为完成 Shell 扩展任务所做的修改，而不是把整个 MOS 实现视为本项目新增代码。
+仓库包含完整 MOS 课程代码，其中大量基础内核、文件系统和用户库来自课程框架。
+
+本 README 只描述为 Shell 扩展任务新增或修改的部分，不把 MOS 原有实现计入本项目工作。

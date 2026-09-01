@@ -608,8 +608,7 @@ int main(int argc, char **argv) {
 				break;
 		}
 
-		// --- MODIFICATION START ---
-		// Correct order for history handling
+				// Normalize input before recording it in history
 
 		// 1. Strip comments
 		char *comment = (char *)strchr(buf, '#');
@@ -628,8 +627,7 @@ int main(int argc, char **argv) {
 		if (interactive && buf[0] != '\0') {
 			history_add(buf);
 		}
-		// --- MODIFICATION END ---
-
+		
 
 		// Variable expansion
 		char *p = buf;

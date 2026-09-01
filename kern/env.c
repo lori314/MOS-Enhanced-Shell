@@ -7,7 +7,7 @@
 #include <sched.h>
 #include <string.h> // NEW: Include string.h for strcpy
 
-struct Env *envs; // FIX: Define as a pointer instead of a static array
+struct Env *envs;
 
 struct Env *curenv = NULL;	      // the current env
 static struct Env_list env_free_list; // Free list
@@ -147,7 +147,7 @@ int envid2env(u_int envid, struct Env **penv, int checkperm) {
  *   You may use these macro definitions below: 'LIST_INIT', 'TAILQ_INIT', 'LIST_INSERT_HEAD'
  */
 void env_init(void) {
-	// FIX: Allocate memory for the 'envs' array dynamically.
+	// Allocate the env array dynamically.
 	// This is the core of the fix to prevent BSS overflow and kernel panic.
 	envs = (struct Env *)alloc(NENV * sizeof(struct Env), PAGE_SIZE, 1);
 	printk("envs array allocated at %x\n", envs);
@@ -253,7 +253,7 @@ int env_alloc(struct Env **new, u_int parent_id) {
 		return r;
 	}
 
-    // FIX: Allocate a page for the environment variables for this new process
+    // Allocate a page for this process's variable table.
     if ((r = page_alloc(&p_vars)) < 0) {
         page_free(pa2page(PADDR(e->env_pgdir))); // Clean up page directory
         return r;

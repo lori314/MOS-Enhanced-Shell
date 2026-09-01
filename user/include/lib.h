@@ -17,7 +17,7 @@
 #define pages ((const volatile struct Page *)UPAGES)
 
 // libos
-// The exit function now takes an integer status code.
+// User processes return an explicit exit status.
 void exit(int status) __attribute__((noreturn));
 
 extern const volatile struct Env *env;
@@ -55,7 +55,7 @@ int syscall_print_cons(const void *str, u_int num);
 u_int syscall_getenvid(void);
 void syscall_yield(void);
 
-// syscall_env_destroy now takes an exit status.
+// Environment destruction carries an exit status.
 int syscall_env_destroy(u_int envid, int status);
 
 int syscall_set_tlb_mod_entry(u_int envid, void (*func)(struct Trapframe *));

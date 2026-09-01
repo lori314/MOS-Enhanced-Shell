@@ -12,7 +12,6 @@
 #define INDEX2FD(i) (FDTABLE + (i) * PTMAP)
 #define INDEX2DATA(i) (FILEBASE + (i) * PDMAP)
 
-// --- MODIFICATION START ---
 // File open modes
 #define O_RDONLY 0x0000  // open for reading only
 #define O_WRONLY 0x0001  // open for writing only
@@ -24,7 +23,6 @@
 #define O_EXCL 0x0400   // error if already exists
 #define O_MKDIR 0x0800  // create directory
 #define O_APPEND 0x1000 // append, write to end of file
-// --- MODIFICATION END ---
 
 // pre-declare for forward references
 struct Fd;
